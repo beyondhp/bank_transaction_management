@@ -1,0 +1,62 @@
+version: '3.8'
+
+# Bank Transaction Management System
+# A containerized application with Spring Boot backend and Vue.js frontend
+
+services:
+  # Backend service - Spring Boot application with in-memory data storage
+  backend:
+    build:
+      context: ./bank-transaction-backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      # JVM options for optimization
+      - JAVA_OPTS=-Xmx512m -Xms256m
+      # Enable Spring Boot Actuator endpoints for health checks
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info
+      - MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=always
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    container_name: bank-transaction-backend
+    networks:
+      - bank-network
+    volumes:
+      - backend-logs:/app/logs
+
+  # Frontend service - Vue.js with Nginx
+  frontend:
+    build:
+      context: ./bank-transaction-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8081:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    container_name: bank-transaction-frontend
+    networks:
+      - bank-network
+
+# Volume definitions for persistent data
+volumes:
+  backend-logs:
+    driver: local
+
+# Network definition for service communication
+networks:
+  bank-network:
+    driver: bridge
