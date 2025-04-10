@@ -38,7 +38,7 @@ This project consists of two main components:
 1. Clone the repository:
 ```bash
 git clone https://github.com/beyondhp/bank_transaction_management
-cd bank-transaction
+cd bank_transaction_management
 ```
 
 2. Start the backend:
